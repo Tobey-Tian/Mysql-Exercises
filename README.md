@@ -1,8 +1,8 @@
 # data-analysis
-This is a simple data analysis project of machine learning algorithms and predictions on real data
+There are several data analysis projects:
 
-### Step I Data Cleaning and Prepossessing 
-Data Prepossessing.ipynb
+### 1. Data Cleaning and Prepossessing 
+
 ### Step II Training Model and Comparison
 Build Algorithms(trainging).ipynb
 ### Step III Extract Real Data from System
