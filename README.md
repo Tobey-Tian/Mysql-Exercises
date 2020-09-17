@@ -2,7 +2,7 @@
 There are several data analysis projects:
 
 ### 1. Big Data 
-
+This project requires data analysis through database sql queries and information visualizations on python, the data is over 4GB.
 ### Step II Training Model and Comparison
 Build Algorithms(trainging).ipynb
 ### Step III Extract Real Data from System
