@@ -1,7 +1,7 @@
 # data-analysis
 There are several data analysis projects:
 
-### 1. Data Cleaning and Prepossessing 
+### 1. Big Data 
 
 ### Step II Training Model and Comparison
 Build Algorithms(trainging).ipynb
