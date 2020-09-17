@@ -10,25 +10,23 @@ library(dplyr)
 
 #HW2_Question1
 
-#导数
+
 CPSC_Enrollment_Info_2019_10 <- read.csv("~/Documents/Brandeis/Healthcare Data Analytics/Assignment2/CPSC_Enrollment_2019_10/CPSC_Enrollment_Info_2019_10.csv")
 View(CPSC_Enrollment_Info_2019_10)
 
-#清理
 CPSC_Enrollment_Info_2019_10_new <- CPSC_Enrollment_Info_2019_10 %>% filter(Enrollment != "*")
 CPSC_Enrollment_Info_2019_10_new <- CPSC_Enrollment_Info_2019_10_new %>% filter(State %in% c("NY","MI","TN","MN","OK","NV","ID","DE","WY") )
 CPSC_Enrollment_Info_2019_10_new <- CPSC_Enrollment_Info_2019_10_new %>% filter(substr(CPSC_Enrollment_Info_2019_10_new$Contract.Number,1,1) != "S")
 View(CPSC_Enrollment_Info_2019_10_new)
 
-#导数2
+
 Monthly_Report_By_Plan_2019_10 <- read.csv("~/Documents/Brandeis/Healthcare Data Analytics/Assignment2/Monthly_Report_By_Plan_2019_10/Monthly_Report_By_Plan_2019_10.csv")
 View(Monthly_Report_By_Plan_2019_10)
 
-#清理2
 Monthly_Report_By_Plan_2019_10_new <- Monthly_Report_By_Plan_2019_10 %>% filter(Enrollment != "*", substr(Monthly_Report_By_Plan_2019_10$Contract.Number,1,1) != "S")
 View(Monthly_Report_By_Plan_2019_10_new)
 
-#导数3
+
 library(readxl)
 MajorInsuranceOrgs <- read_excel("Documents/Brandeis/Healthcare Data Analytics/Assignment2/MajorInsuranceOrgs.xlsx")
 View(MajorInsuranceOrgs)
@@ -66,7 +64,7 @@ View(merge_state_company)
 write.csv(merge_state_company, file = "~/Documents/Brandeis/Healthcare Data Analytics/Assignment2/merge_state_company.csv",  sep = "", row.names = FALSE, col.names = TRUE)
 
 #HHI = (Xi/X)^2
-#4家企业，每个企业的市场份额分别为40%、25%、17%和18%，HHI= 0.4^2 + 0.25^2 + 0.17^2 + 0.18^2= 0.2838
+#40%、25%、17%和18%，HHI= 0.4^2 + 0.25^2 + 0.17^2 + 0.18^2= 0.2838
 HHI <- merge_state_company %>% group_by(State) %>% summarise(HHI = sum(market_share^2)) %>% arrange(-HHI)
 View(HHI)
 head(HHI, 4)
