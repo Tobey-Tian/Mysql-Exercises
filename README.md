@@ -54,4 +54,22 @@ Upload Functions to GCP
 
 ### 5. Basic Sentiment Analysis-- R
 
+This project is to build a dictionary based classifier to detect whether a given text 
 
+is positive or negative or neutral using as features patterns of positive and negative words. 
+
+### 6. Compare Different Classifiers-- R
+
+This project compares five different classifiers with three different datasets.
+
+Topics:
+
+KNN
+
+Naive Bayes
+
+Linear Regression
+
+Regression Trees
+
+Neural Nets
