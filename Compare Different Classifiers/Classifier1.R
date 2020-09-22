@@ -1,5 +1,5 @@
 ---
-title: "Homework6-Yuan Tian"
+title: "-Yuan Tian"
 output: html_document
 ---
 
