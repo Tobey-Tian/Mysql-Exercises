@@ -1,0 +1,209 @@
+---
+title: "Assignment 6_Q1"
+output:
+  html_document:
+    df_print: paged
+---
+```{r}
+library(class)
+library(gmodels)
+library(caret) 
+library(e1071)
+library(naivebayes)
+library(data.table)
+library(tree)
+library(neuralnet)
+library(titanic)
+set.seed(123456)
+setwd("D:/Brandeis/Course/BUS 256/Homework")
+```
+
+# data preparation
+```{r}
+mydata = as.data.frame(titanic_train)
+dummy_sex = nnet::class.ind(mydata$Sex)
+mydata = as.data.frame(cbind(mydata, dummy_sex))
+# Change Embarked column to 0 = 'C', 1 = 'Q', 2 = 'S' and replace NAs with 'S'(mode)
+mydata$Embarked[mydata$Embarked == ''] <- 'S'
+dummy_embarked = nnet::class.ind(mydata$Embarked)
+mydata = cbind(mydata, dummy_embarked)
+# replace NAs of Age and Fare with average
+age_avg = mean(na.omit(mydata$Age))
+age_avg = round(age_avg, digits = 0)
+mydata$Age[is.na(mydata$Age)] = age_avg
+fare_avg = mean(na.omit(mydata$Fare))
+fare_avg = round(fare_avg, digits = 0)
+mydata$Fare[is.na(mydata$Fare)] = fare_avg
+# remove useless columns
+mydata = mydata[,c(2:3, 6:8, 10, 13:17)]
+```
+
+# KNN
+```{r}
+titanic = as.data.frame(mydata)
+table(titanic$Survived)
+
+# Renaming diagnosis as a factor with proper labels
+titanic$Survived = as.factor(titanic$Survived)
+# Initial exploratory analysis
+round(prop.table(table(titanic$Survived)) * 100, digits = 1)
+
+# Prep the data:(i) normalizing and (ii)test vs non-test data sep
+# Normalizing function and normalizing the wbcd data
+normalize = function(x){return ((x - min(x)) / (max(x) - min(x)))}
+titanic_n = as.data.frame(lapply(titanic[,2:11], normalize))
+
+# create training and test data
+titanic_train = titanic[1:713,]
+titanic_test = titanic[714:802,]
+titanic_valid = titanic[803:891,]
+titanic_train_n = titanic_n[1:713,]
+titanic_test_n = titanic_n[714:802,]
+titanic_valid_n = titanic_n[803:891,]
+
+# create labels for training and test data
+titanic_train_labels = titanic_train[, 1]
+titanic_test_labels  = titanic_test[ , 1]
+titanic_valid_labels = titanic_valid[, 1]
+
+# Training model on titanic_train
+titanic_valid_pred = class::knn(train = titanic_train_n, 
+                             cl    = titanic_train_labels,
+                             test  = titanic_valid_n,
+                             k     = 5)
+
+k5_conf_mat     = gmodels::CrossTable(x          = titanic_valid_labels, 
+                                      y          = titanic_valid_pred,
+                                      prop.chisq = TRUE)
+
+k5_conf_mat$t
+(46+23)/(46+23+10+10) # 0.7752809
+```
+
+# Naive Bayes
+```{r}
+titanic = as.data.frame(mydata)
+titanic$Survived = as.factor(titanic$Survived)
+
+# Prep the data:(i) normalizing and (ii) test vs non-test data sep
+# standarize the data
+titanic_train    = createDataPartition(titanic$Survived, p=0.8)$Resample1 
+titanic_test     = (1:nrow(titanic))[! (1:nrow(titanic) %in% titanic_train)]
+
+dta_train    = titanic[ titanic_train, ]
+dta_test     = titanic[-titanic_train, ]
+
+# Training a model on the data
+NBclassifier=naive_bayes(formula = Survived ~ .,
+                         data = dta_train)
+predict(NBclassifier,newdata = dta_test)
+
+# Evaluating model performance using a confusion matrix
+test_data = dta_test[,"Survived"]
+pred_data = predict(NBclassifier,newdata = dta_test)
+fitted_data = as.data.table(cbind(test_data = as.character(dta_test[,"Survived"]), 
+                                  pred_data = as.character(predict(NBclassifier,newdata = dta_test))))
+fitted_data$is_equal = fitted_data$test_data==fitted_data$pred_data
+confuss_mat          = fitted_data[,
+                                   {
+                                     tmp1=sum(is_equal);
+                                     tmp2=sum(!is_equal);
+                                     list(corrects=tmp1,wrongs = tmp2)
+                                   },keyby=.(test_data,pred_data)]
+confuss_mat
+(95+53)/(95+53+14+15) # 0.8361582
+```
+
+# linear regression
+```{r}
+titanic = as.data.frame(mydata)
+
+# Prep the data:(i) normalizing and (ii) test vs non-test data sep
+# standarize the data
+titanic_train    = createDataPartition(titanic$Survived, p=0.8)$Resample1 
+titanic_valid    = NULL
+titanic_test     = (1:nrow(titanic))[! (1:nrow(titanic) %in% titanic_train)]
+
+dta_train    = titanic[ titanic_train, ]
+dta_valid    = titanic[ titanic_valid, ]
+dta_test     = titanic[-titanic_train, ]
+
+# regression model
+reg = lm(Survived ~., data = dta_train)
+summary(reg)
+
+titanic_train$reg_pred = round(predict(reg, dta_train))
+
+fitted_data          = data.table( cbind(test_data = dta_test[,"Survived"],
+                                         pred_data = paste(predict(reg,newdata = dta_test)))
+)
+fitted_data$pred_data = ifelse(fitted_data$pred_data > 0.5, 1, 0)
+fitted_data$is_equal = fitted_data$test_data==fitted_data$pred_data
+confuss_mat          = fitted_data[,
+                                   {
+                                     tmp1=sum(is_equal);
+                                     tmp2=sum(!is_equal);
+                                     list(corrects=tmp1,wrongs = tmp2)
+                                   },keyby=.(test_data,pred_data)]
+confuss_mat
+(96+42)/(96+42+16+24) # 0.7752809
+```
+
+# tree regression
+```{r}
+titanic = as.data.frame(mydata)
+id_train    = caret::createDataPartition(titanic$Survived, p=0.9)$Resample1 
+train <- titanic[id_train, ]
+test <- titanic[-id_train, ]
+test_labels=test[,1]
+treefit = tree(Survived ~., data=train)
+treefit
+summary(treefit)
+
+predict = predict(treefit, test)
+pred <- ifelse(predict>0.5, 1, 0)
+t(t <- table(test_labels, pred))
+(accuracy = sum(diag(t)) / sum(t))
+```
+
+# Neural Net
+```{r}
+titanic = as.data.frame(mydata)
+
+# custom normalization function
+# apply normalization to entire data frame
+# confirm that the range is now between zero and one
+normalize     = function(x) { 
+  return((x - min(x)) / (max(x) - min(x)))
+}
+titanic_norm = as.data.frame(lapply(titanic[,2:11], normalize))
+
+# create training and test data
+titanic_train = titanic[1:713,]
+titanic_test = titanic[714:891,]
+
+# simple NN with only a single hidden neuron
+softmax        = function(x) log(1 + exp(x))
+relu           = function(x) max(x,0)
+concrete_model = neuralnet(formula = Survived ~ .,
+                           data    = titanic_train,
+                           hidden  = 1,
+                           act.fct = c("logistic",softmax,relu)[[2]],
+                           err.fct = c("sse","ce")[1]
+)
+
+fitted_data          = data.table( cbind(test_data = titanic_test[,"Survived"],
+                                         pred_data = paste(predict(concrete_model,newdata = titanic_test)))
+)
+fitted_data$pred_data = ifelse(fitted_data$pred_data > 0.5, 1, 0)
+fitted_data$is_equal = fitted_data$test_data==fitted_data$pred_data
+confuss_mat          = fitted_data[,
+                                   {
+                                     tmp1=sum(is_equal);
+                                     tmp2=sum(!is_equal);
+                                     list(corrects=tmp1,wrongs = tmp2)
+                                   },keyby=.(test_data,pred_data)]
+confuss_mat
+(106+43)/(106+43+9+20) # 0.8370787
+```
+
