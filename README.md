@@ -73,3 +73,5 @@ Linear Regression
 Regression Trees
 
 Neural Nets
+
+### 7. Marketing Analytics Assignments
